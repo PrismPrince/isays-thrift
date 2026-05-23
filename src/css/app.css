@@ -1,1 +1,9 @@
 /* app global css */
+
+.font-fancy {
+  font-family: 'Antic Didone';
+}
+
+body {
+  font-family: 'Quicksand', 'Roboto', '-apple-system', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
