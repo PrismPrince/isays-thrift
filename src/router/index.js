@@ -6,6 +6,7 @@ import {
   createWebHashHistory,
 } from 'vue-router'
 import routes from './routes'
+import { pb } from 'src/boot/pocketbase'
 
 /*
  * If not building with SSR mode, you can
@@ -31,6 +32,22 @@ export default defineRouter((/* { store, ssrContext } */) => {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  })
+
+  Router.beforeEach((to) => {
+    const isLoggedIn = pb.authStore.isValid
+
+    // User is logged in and tries to visit landing page
+    if (to.path === '/' && isLoggedIn) {
+      return '/dashboard'
+    }
+
+    // Protected route requires authentication
+    if (to.meta.requiresAuth && !isLoggedIn) {
+      return '/'
+    }
+
+    return true
   })
 
   return Router
