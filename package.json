@@ -11,7 +11,7 @@
     "format": "prettier --write \"**/*.{js,vue,css,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
-    "pb": "node pocketbase/scripts/run-pocketbase.js",
+    "pb": "node pocketbase/scripts/run-pocketbase.cjs",
     "install:pocketbase": "node pocketbase/scripts/install-pocketbase.js",
     "build": "quasar build",
     "postinstall": "quasar prepare && npm run install:pocketbase"
