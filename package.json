@@ -11,11 +11,14 @@
     "format": "prettier --write \"**/*.{js,vue,css,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
+    "pb": "node pocketbase/scripts/run-pocketbase.js",
+    "install:pocketbase": "node pocketbase/scripts/install-pocketbase.js",
     "build": "quasar build",
-    "postinstall": "quasar prepare"
+    "postinstall": "quasar prepare && npm run install:pocketbase"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",
+    "pocketbase": "^0.27.1",
     "quasar": "^2.16.0",
     "register-service-worker": "^1.7.2",
     "vue": "^3.5.22",
