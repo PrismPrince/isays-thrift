@@ -1,0 +1,21 @@
+/* Removes the dropdown arrow icon across Chrome, Edge, and Safari */
+.no-input-controls input[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+.no-input-controls input[list]::-webkit-list-button {
+  opacity: 0;
+}
+
+/* Chrome, Safari, Edge, Opera */
+.no-input-controls input::-webkit-outer-spin-button,
+.no-input-controls input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.no-input-controls input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

@@ -1,50 +1,65 @@
 <template>
-  <datalist id="names">
-    <option v-for="customer in customers" :key="customer.id" :value="customer.name" />
-  </datalist>
-
   <q-page class="full-width">
-    <div class="dashboard">
+    <div class="grid">
       <q-card class="fields">
         <q-card-section>
-          <input type="hidden" v-model="fieldsForm.customerId">
-          <q-input
-            color="amber-6"
-            label="Name"
-            type="text"
-            list="names"
-            hint="Press Ctrl + Enter to add."
-            ref="nameInputEl"
-            v-model.trim="fieldsForm.name"
-            :rules="[val => !!val || 'Field cannot be empty.']"
-            @keydown.ctrl.enter.prevent="handleFieldsKeydown"
+          <q-select
+            dense
             outlined
-            dense 
-          />
+            label="Name"
+            ref="nameInputEl"
+            v-model.trim="customerInput"
+            use-input
+            hide-selected
+            fill-input
+            input-debounce="0"
+            :options="customersFiltered"
+            :color="isNewCustomer ? 'positive' : 'amber-6'"
+            :hint="isNewCustomer ? 'New customer!' : undefined"
+            :hide-hint="!isNewCustomer"
+            @filter="filterCustomers"
+            @update:model-value="selectCustomer"
+            @input-value="setCustomerInput"
+            :rules="[val => !!val || 'Field cannot be empty.']"
+          >
+            <template #no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  No results
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+
           <q-input
+            class="no-input-controls"
             color="amber-6"
-            label="Payment"
+            label="Cost"
             type="number"
             inputmode="numeric"
             min="0"
             hint="Press Ctrl + Enter to add."
-            ref="paymentInputEl"
-            v-model.trim="fieldsForm.payment"
-            :rules="[val => !!val || 'Field cannot be empty.', val => val >= 0 || 'Payment must be a positive number.']"
+            ref="costInputEl"
+            v-model.trim="fieldsForm.cost"
+            :rules="[val => !!val || 'Field cannot be empty.', val => val >= 0 || 'Cost must be a positive number.']"
             @keydown.ctrl.enter.prevent="handleFieldsKeydown"
             outlined
             dense 
           />
+
           <q-select
             color="amber-6"
             label="Category"
             ref="categoryInputEl"
-            v-model="fieldsForm.category"
+            v-model="fieldsForm.category_id"
             :options="categories.map(({ id, name }) => ({ label: name, value: id }))"
             :rules="[val => !!val || 'Select category.']"
+            emit-value
+            map-options
             outlined
             dense
           />
+
           <q-btn label="Add" color="amber-6" icon="add" @click="handleFieldsButton" />
         </q-card-section>
       </q-card>
@@ -54,30 +69,51 @@
           <q-tab name="ALL" label="ALL" />
           <q-tab v-for="category in categories" :name="category.id" :label="category.name" :key="category.id" />
         </q-tabs>
-        <q-table class="sticky-header-column-table" flat bordered hide-bottom :rows="filteredSales" :columns="salesHeaders" :pagination="{ rowsPerPage: 0 }" row-key="name" />
-        <!--q-markup-table class="table-header">
-        <thead>
-          <tr>
-            <th class="text-left">Name</th>
-            <th class="text-left">Payment</th>
-            <th class="text-left">Pickup</th>
-          </tr>
-        </thead>
-      </q-markup-table>
-      <q-markup-table class="table-records">
-        <tbody>
-          <tr v-for="(sale, index) in sales" :key="index">
-            <td>{{ sale.name }}</td>
-            <td>{{ sale.payment }}</td>
-            <td>{{ sale.pickup === 'PICKUP' ? 'PICKUP' : '' }}</td>
-          </tr>
-          <tr v-for="(item, index) in 50" :key="index">
-            <td>Sample</td>
-            <td>Sample</td>
-            <td>Sample</td>
-          </tr>
-        </tbody>
-      </q-markup-table-->
+
+        <q-table class="sticky-header-column-table" flat bordered hide-bottom :rows="filteredSales" :columns="salesHeaders" :pagination="{ rowsPerPage: 0 }" row-key="name">
+          <template #header="props">
+            <q-tr :props="props">
+              <q-th
+                v-for="col in props.cols"
+                :key="col.name"
+                :props="props"
+                class="bg-amber-3"
+              >
+                {{ col.label }}
+              </q-th>
+            </q-tr>
+          </template>
+          
+          <template #body="props">
+            <q-tr :props="props">
+              <q-td class="bg-amber-2" key="customer_name" :props="props">{{ props.row.customer_name }}</q-td>
+              <q-td key="location_name" :props="props">
+                <q-badge :color="props.row.location_color || 'grey'">
+                  {{ props.row.location_name }}
+                </q-badge>
+              </q-td>
+              <q-td key="landmark" :props="props">{{ props.row.landmark }}</q-td>
+              <q-td key="contact" :props="props">{{ props.row.contact }}</q-td>
+              <q-td key="cost" :props="props">{{ props.row.cost }}</q-td>
+              <q-td key="actions" :props="props">
+                <div class="actions">
+                  <q-btn color="positive" size="sm">
+                    <span class="row items-center no-wrap">
+                      <q-icon name="edit" left></q-icon>
+                      Edit
+                    </span>
+                  </q-btn>
+                  <q-btn color="negative" size="sm">
+                    <span class="row items-center no-wrap">
+                      <q-icon name="delete" left></q-icon>
+                      Delete
+                    </span>
+                  </q-btn>
+                </div>
+              </q-td>
+            </q-tr>
+          </template>
+        </q-table>
       </q-card>
 
       <q-card class="new-customers-list">
@@ -88,21 +124,61 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, useTemplateRef, nextTick } from 'vue'
+import { ref, computed, onMounted, useTemplateRef, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { pb } from 'src/boot/pocketbase'
 
 const $q = useQuasar()
 
 const fieldsForm = ref({
-  customerId: '',
-  name: '',
-  payment: '',
-  category: null,
+  customer: {
+    id: '',
+    name: ''
+  },
+  cost: '',
+  category_id: '',
 })
 
+// select UI state
+const customerInput = ref('')
+
+const isNewCustomer = computed(() => fieldsForm.value.customer.name && !fieldsForm.value.customer.id)
+
+const customersFiltered = ref([])
+
+const filterCustomers = (val, update) => {
+  update(() => {
+    const needle = val?.toLowerCase() || ''
+
+    customersFiltered.value = customers.value
+      .filter(({ name }) =>
+        name.toLowerCase().includes(needle)
+      )
+      .map(({ id, name }) => ({
+        label: name,
+        value: id
+      }))
+  })
+}
+
+const selectCustomer = (option) => {
+  fieldsForm.value.customer = {
+    id: option.value,
+    name: option.label
+  }
+}
+
+const setCustomerInput = (value) => {
+  customerInput.value = value
+
+  fieldsForm.value.customer = {
+    id: '',
+    name: value.trim()
+  }
+}
+
 const nameInputEl = useTemplateRef('nameInputEl')
-const paymentInputEl = useTemplateRef('paymentInputEl')
+const costInputEl = useTemplateRef('costInputEl')
 const categoryInputEl = useTemplateRef('categoryInputEl')
 
 // records from customers, categories ,sales table in pocketbase
@@ -111,11 +187,20 @@ const newCustomers = ref([])
 const categories = ref([])
 const salesWithDetails = ref([])
 
+const salesCategoryTab = ref('ALL')
+
 onMounted(async () => {
   customers.value = await pb.collection('customers').getFullList({
     sort: '-created',
   })
 
+  // sales table
+  customersFiltered.value = customers.value.map(({ id, name }) => ({
+    label: name,
+    value: id
+  }))
+
+  // new customers table
   newCustomers.value = customers.value.filter(({ created }) => new Date(created) > new Date(Date.now() - 24 * 60 * 60 * 1000))
 
   categories.value = await pb.collection('categories').getFullList({
@@ -126,24 +211,12 @@ onMounted(async () => {
     sort: '-sale_date',
   })
 
-  console.log('customers', customers.value)
-  console.log('categories', categories.value)
-  console.log('sales_with_details', salesWithDetails.value)
+  // console.log('customers', customers.value)
+  // console.log('categories', categories.value)
+  // console.log('sales_with_details', salesWithDetails.value)
 })
 
-watch(
-  () => fieldsForm.value.name,
-  (newName) => {
-    const customer = customers.value.find((customer) => customer.name === newName)
-    if (customer) {
-      fieldsForm.value.customerId = customer.id
-    } else {
-      fieldsForm.value.customerId = ''
-    }
-  }
-)
-
-// records from sales table in pocketbase
+// filtered records from sales table
 const filteredSales = computed(() => {
   if (salesCategoryTab.value === 'ALL') return salesWithDetails.value
   return salesWithDetails.value.filter(({ category_id }) => category_id === salesCategoryTab.value)
@@ -152,16 +225,15 @@ const filteredSales = computed(() => {
 // table headers for sales table
 const salesHeaders = [
   { name: 'customer_name', label: 'Name', field: 'customer_name', align: 'left' },
-  { name: 'location', label: 'Location', field: 'location', align: 'left' },
+  { name: 'location_name', label: 'Location', field: 'location_name', align: 'left' },
   { name: 'landmark', label: 'Landmark', field: 'landmark', align: 'left' },
   { name: 'contact', label: 'Contact', field: 'contact', align: 'left' },
-  { name: 'payment', label: 'Payment', field: 'payment', align: 'left' },
+  { name: 'cost', label: 'Cost', field: 'cost', align: 'left' },
+  { name: 'actions', label: 'Actions', field: 'actions', align: 'left' },
 ]
 const newCustomersHeaders = [
   { name: 'name', label: 'Name', field: 'name', align: 'left' }
 ]
-const salesCategoryTab = ref('ALL')
-
 
 const handleFieldsKeydown = () => {
   addToSales()
@@ -172,17 +244,15 @@ const handleFieldsButton = () => {
 }
 
 const addToSales = async () => {
-  if (fieldsForm.value.name && fieldsForm.value.payment && fieldsForm.value.category.value) {
+  if (fieldsForm.value.customer.name && fieldsForm.value.cost && fieldsForm.value.category) {
 
-    if (!fieldsForm.value.customerId) {
+    if (!fieldsForm.value.customer.id) {
       // create new customer in pocketbase
       const newCustomer = await pb.collection('customers').create({
-        name: fieldsForm.value.name,
+        name: fieldsForm.value.customer.name,
       })
-      fieldsForm.value.customerId = newCustomer.id
+      fieldsForm.value.customer.id = newCustomer.id
       customers.value.push(newCustomer)
-
-      console.log(newCustomer)
 
       $q.notify({
         type: 'positive',
@@ -190,16 +260,14 @@ const addToSales = async () => {
       })
     }
 
-    const customer = customers.value.find(({ id }) => id === fieldsForm.value.customerId)
-    const category = categories.value.find(({ id }) => id === fieldsForm.value.category.value)
+    const customer = customers.value.find(({ id }) => id === fieldsForm.value.customer.id)
+    const category = categories.value.find(({ id }) => id === fieldsForm.value.category_id)
 
     // create new sale in pocketbase
     const newSale = await pb.collection('sales').create({
-      customer_id: fieldsForm.value.customerId,
-      category_id: fieldsForm.value.category.value,
-      payment: parseFloat(fieldsForm.value.payment),
-      delivered: false,
-      paid: false,
+      customer_id: customer.id,
+      category_id: category.id,
+      cost: parseFloat(fieldsForm.value.cost),
     })
 
     console.log(newSale)
@@ -219,29 +287,28 @@ const addToSales = async () => {
       message: 'Sale added successfully!',
     })
 
-    fieldsForm.value.customerId = ''
-    fieldsForm.value.name = ''
-    fieldsForm.value.payment = ''
+    fieldsForm.value.customer.id = ''
+    fieldsForm.value.customer.name = ''
+    fieldsForm.value.cost = ''
 
     await nextTick()
 
     nameInputEl.value.resetValidation()
-    paymentInputEl.value.resetValidation()  
+    costInputEl.value.resetValidation()  
     categoryInputEl.value.resetValidation()
   }
 }
 </script>
 
 <style scoped>
+@import 'src/css/d-table-sticky-header.css';
+
 .q-page {
-  /* height: 1dvh;
-  overflow: hidden;
-  padding: 0.5rem; */
   display: flex;
   flex-direction: column;
 }
 
-.dashboard {
+.grid {
   flex: 1;
   height: 100%;
   padding: 0.5rem;
@@ -285,75 +352,20 @@ const addToSales = async () => {
 }
 
 .sticky-header-column-table {
-  /* height or max-height is important */
-  height: 310px;
+  --height: unset;
+  --max-with: unset;
+}
 
-  /* specifying max-width so the example can
-    highlight the sticky column on any browser window */
-  /* max-width: 600px; */
+.actions {
+  display: flex;
+  gap: 0.5rem;
 
-  td:first-child {
-    /* bg color is important for td; just specify one */
-    background-color: #00b4ff;
-  }
-  tr th {
-    position: sticky;
-    /* higher than z-index for td below */
-    z-index: 2;
-    /* bg color is important; just specify one */
-    background: #00b4ff;
-  }
-  /* this will be the loading indicator */
-  thead tr:last-child th {
-    /* height of all previous header rows */
-    top: 48px;
-    /* highest z-index */
-    z-index: 3;
-  }
-  thead tr:first-child th {
-    top: 0;
-    z-index: 1;
-  }
-  tr:first-child th:first-child {
-    /* highest z-index */
-    z-index: 3;
-  }
-  td:first-child {
-    z-index: 1;
-  }
-  td:first-child,
-  th:first-child {
-    position: sticky;
-    left: 0;
-  }
-  /* prevent scrolling behind sticky top row on focus */
-  tbody {
-    /* height of all previous header rows */
-    scroll-margin-top: 48px;
+  .q-btn {
+    white-space: nowrap;
   }
 }
 </style>
 
 <style>
-/* Removes the dropdown arrow icon across Chrome, Edge, and Safari */
-input[list]::-webkit-calendar-picker-indicator {
-  display: none !important;
-}
-
-input[list]::-webkit-list-button {
-  opacity: 0;
-}
-
-/* Chrome, Safari, Edge, Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Firefox */
-input[type='number'] {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
+@import 'src/css/d-input-no-controls.css';
 </style>
