@@ -10,7 +10,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" side="left" overlay bordered>
+    <q-drawer v-model="leftDrawerOpen" side="left" bordered>
       <q-scroll-area class="fit">
         <d-nav-menu-list></d-nav-menu-list>
         <q-separator />
@@ -43,7 +43,7 @@ import DLogoutBtn from 'components/auth/DLogoutBtn.vue'
 
 const leftDrawerOpen = ref(true)
 const menuList = ref([
-  { label: 'Masterlist', icon: 'people', to: '/dashboard/masterlist' },
+  { label: 'Customers', icon: 'people', to: '/dashboard/customers' },
   { label: 'Locations', icon: 'map', to: '/dashboard/locations' },
   { label: 'Categories', icon: 'category', to: '/dashboard/categories' },
 ])

@@ -1,5 +1,16 @@
 <template>
-  <q-page class="flex flex-center">
-    <img alt="Quasar logo" style="width: 200px; height: 200px" />
+  <q-page class="dashboard">
+    <q-card>
+      Dashboard
+    </q-card>
   </q-page>
 </template>
+
+<script setup>
+</script>
+
+<style scoped>
+.dashboard {
+  padding: 0.5rem;
+}
+</style>
