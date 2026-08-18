@@ -284,8 +284,6 @@
                 <q-btn
                   color="positive"
                   size="sm"
-                  icon="edit"
-                  label="Edit"
                   @click="editCustomer(props.row)"
                 >
                   <span class="row items-center no-wrap">
@@ -297,8 +295,6 @@
                 <q-btn
                   color="negative"
                   size="sm"
-                  icon="delete"
-                  label="Delete"
                   @click="deleteCustomer(props.row)"
                 >
                   <span class="row items-center no-wrap">
