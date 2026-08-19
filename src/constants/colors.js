@@ -20,6 +20,10 @@ const colors = [
     value: 'blue',
   },
   {
+    label: 'Light Blue',
+    value: 'light-blue',
+  },
+  {
     label: 'Cyan',
     value: 'cyan',
   },
@@ -36,12 +40,20 @@ const colors = [
     value: 'lime',
   },
   {
+    label: 'Yellow',
+    value: 'yellow',
+  },
+  {
     label: 'Amber',
     value: 'amber',
   },
   {
     label: 'Orange',
     value: 'orange',
+  },
+  {
+    label: 'Deep Orange',
+    value: 'deep-orange',
   },
   {
     label: 'Brown',
